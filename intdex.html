@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wedding Photo Booth</title>
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  h1 {
+    margin-top: 20px;
+  }
+
+  #video {
+    margin-top: 20px;
+    border: 2px solid #333;
+    border-radius: 5px;
+  }
+
+  #capture-btn, #upload-btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  #preview-container {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #preview-container img {
+    margin: 5px;
+    border: 2px solid #333;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+  <h1>Wedding Photo Booth</h1>
+  
+  <!-- Camera interface -->
+  <video id="video" width="640" height="480" autoplay></video>
+  <button id="capture-btn">Capture Photo</button>
+  
+  <!-- Preview photos -->
+  <div id="preview-container"></div>
+  
+  <!-- Upload button -->
+  <button id="upload-btn">Upload Photos</button>
+  
+  <script>
+    const video = document.getElementById('video');
+    const captureBtn = document.getElementById('capture-btn');
+    const uploadBtn = document.getElementById('upload-btn');
+    const previewContainer = document.getElementById('preview-container');
+
+    // Function to initialize the camera
+    async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+      }
+    }
+
+    // Function to capture a photo
+    function capturePhoto() {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const photoURL = canvas.toDataURL('image/jpeg');
+      const img = document.createElement('img');
+      img.src = photoURL;
+
+      previewContainer.appendChild(img);
+    }
+
+    // Function to upload photos
+    async function uploadPhotos(email) {
+      const photos = Array.from(previewContainer.children);
+
+      for (let i = 0; i < photos.length; i++) {
+        const photoData = photos[i].src;
+        try {
+          const response = await fetch('/upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, photoData })
+          });
+          const data = await response.json();
+          console.log(data);
+        } catch (error) {
+          console.error('Error uploading photo:', error);
+        }
+      }
+    }
+
+    // Event listeners
+    captureBtn.addEventListener('click', capturePhoto);
+    uploadBtn.addEventListener('click', () => {
+      const email = prompt('Enter your email:');
+      uploadPhotos(email);
+    });
+
+    // Initialize camera when the page loads
+    window.onload = initCamera;
+  </script>
+</body>
+</html>
